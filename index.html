@@ -1,0 +1,290 @@
+# wed-ki-m-xu10
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Coin & Treasure Chest Radar - Cloud VIP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .glass { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); }
+        .gradient-text { background: linear-gradient(135deg, #FF0050 0%, #00F2FE 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
+
+    <!-- OVERLAY KHÓA KEY VERIFICATION -->
+    <div id="key-overlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-md">
+        <div class="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-3xl max-w-md w-full shadow-2xl text-center relative">
+            <div class="w-16 h-16 bg-gradient-to-tr from-pink-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-pink-500/20">
+                <i class="fa-solid fa-key text-2xl text-white"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Nhập Key kích hoạt VIP</h2>
+            <p class="text-slate-400 text-sm mb-6">Bạn cần mã Key hợp lệ từ hệ thống quản lý để truy cập công cụ tìm Live TikTok kiếm xu.</p>
+
+            <form onsubmit="validateKey(event)" class="space-y-4">
+                <input type="text" id="user-key" required placeholder="Nhập mã KEY của bạn (VD: KEY-XXXX)" 
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-center font-mono text-cyan-400 font-bold focus:outline-none focus:border-cyan-500 transition tracking-wider">
+                
+                <button type="submit" id="btn-submit-key" class="w-full bg-gradient-to-r from-pink-500 to-cyan-500 hover:opacity-90 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-pink-500/20 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-lock-open"></i> Kích hoạt Hệ thống
+                </button>
+            </form>
+
+            <div id="key-status-msg" class="mt-4 text-sm hidden font-medium"></div>
+        </div>
+    </div>
+
+    <!-- NỘI DUNG CHÍNH (ẢN CHO ĐẾN KHI VERIFY KEY THÀNH CÔNG) -->
+    <div id="main-app" class="hidden">
+        <!-- Header -->
+        <header class="border-b border-slate-800 bg-slate-900/50 sticky top-0 z-40 backdrop-blur-md">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-pink-500">
+                        <i class="fa-brands fa-tiktok text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold gradient-text">TikTok Coin Radar Pro</h1>
+                        <p class="text-xs text-slate-400">Săn Rương Treo & Xu Live Tự Động</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-xs font-semibold flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Key VIP: <span id="active-key-label" class="font-mono"></span>
+                    </span>
+                    <button onclick="logoutKey()" class="text-slate-400 hover:text-rose-400 p-2 text-sm" title="Đăng xuất Key"><i class="fa-solid fa-power-off"></i></button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Dash Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                    <p class="text-xs font-medium text-slate-400 uppercase">Phòng Live Xu Cao</p>
+                    <h3 id="stat-total-lives" class="text-2xl font-bold text-white mt-1">0</h3>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                    <p class="text-xs font-medium text-slate-400 uppercase">Rương Sắp Nổ (&lt; 2 Phút)</p>
+                    <h3 id="stat-chests-ready" class="text-2xl font-bold text-amber-400 mt-1">0</h3>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                    <p class="text-xs font-medium text-slate-400 uppercase">Tổng Xu Đang Treo</p>
+                    <h3 id="stat-total-coins" class="text-2xl font-bold text-cyan-400 mt-1">0</h3>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                    <p class="text-xs font-medium text-slate-400 uppercase">Trạng Thái Quét Radar</p>
+                    <h3 class="text-2xl font-bold text-emerald-400 mt-1 flex items-center gap-2">
+                        <span class="w-3 h-3 bg-emerald-500 rounded-full animate-ping"></span> Realtime
+                    </h3>
+                </div>
+            </div>
+
+            <!-- Action Filter Bar -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <button onclick="startScanning()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-rotate text-sm"></i> Quét Lại Dữ Liệu
+                    </button>
+                    <select id="filter-type" onchange="filterLives()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm">
+                        <option value="all">Tất cả phòng Live</option>
+                        <option value="chest">Chỉ phòng có Rương treo</option>
+                        <option value="high-coin">Tổng xu khủng (> 5,000 Xu)</option>
+                    </select>
+                </div>
+                <div class="text-xs text-slate-400 flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-emerald-400"></i> Thuật toán ưu tiên phòng có tỷ lệ nhả xu cao nhất & cạnh tranh thấp
+                </div>
+            </div>
+
+            <!-- Live List -->
+            <div id="live-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards will render here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Firebase Connection Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCQKrsf4BGtI8-PUB1oyp5wz-OpL11MP1A",
+            authDomain: "quanlykey-f0f93.firebaseapp.com",
+            databaseURL: "https://quanlykey-f0f93-default-rtdb.firebaseio.com",
+            projectId: "quanlykey-f0f93",
+            storageBucket: "quanlykey-f0f93.firebasestorage.app",
+            messagingSenderId: "430622101392",
+            appId: "1:430622101392:web:ee42a42716223e5ae12d15"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Lưu key tạm local
+        const savedKey = localStorage.getItem('tiktok_vip_key');
+        if (savedKey) {
+            document.getElementById('user-key').value = savedKey;
+            checkKeyValidity(savedKey, true);
+        }
+
+        window.validateKey = function(e) {
+            e.preventDefault();
+            const inputKey = document.getElementById('user-key').value.trim();
+            checkKeyValidity(inputKey, false);
+        }
+
+        async function checkKeyValidity(inputKey, isAutoLogin) {
+            const statusEl = document.getElementById('key-status-msg');
+            const submitBtn = document.getElementById('btn-submit-key');
+            
+            statusEl.className = "mt-4 text-sm font-medium text-amber-400 flex items-center justify-center gap-2";
+            statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang xác thực Key với Cloud Database...`;
+            statusEl.classList.remove('hidden');
+
+            try {
+                const snapshot = await get(ref(db, 'keys'));
+                if (snapshot.exists()) {
+                    const keysData = snapshot.val();
+                    const validKey = Object.values(keysData).find(k => k.key === inputKey);
+
+                    if (validKey) {
+                        if (validKey.status === 'active') {
+                            localStorage.setItem('tiktok_vip_key', inputKey);
+                            document.getElementById('key-overlay').classList.add('hidden');
+                            document.getElementById('main-app').classList.remove('hidden');
+                            document.getElementById('active-key-label').innerText = inputKey;
+                            startScanning();
+                            return;
+                        } else {
+                            showError("Key này đã bị KHÓA hoặc HẾT HẠN sử dụng!");
+                            return;
+                        }
+                    }
+                }
+                showError("Key không tồn tại trên hệ thống Đám mây!");
+            } catch (err) {
+                showError("Không thể kết nối máy chủ Firebase. Kiểm tra lại mạng!");
+                console.error(err);
+            }
+        }
+
+        function showError(msg) {
+            localStorage.removeItem('tiktok_vip_key');
+            const statusEl = document.getElementById('key-status-msg');
+            statusEl.className = "mt-4 text-sm font-medium text-rose-400 bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/20";
+            statusEl.innerText = msg;
+        }
+
+        window.logoutKey = function() {
+            localStorage.removeItem('tiktok_vip_key');
+            location.reload();
+        }
+
+        // --- GIẢ LẬP RADAR QUÉT THỜI GIAN THỰC & RƯƠNG ---
+        let mockLives = [];
+
+        window.startScanning = function() {
+            const container = document.getElementById('live-container');
+            container.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400"><i class="fa-solid fa-radar fa-spin text-3xl text-cyan-400 mb-3"></i><p>Đang tìm các phòng Live có Rương & Xu khủng nhất...</p></div>`;
+
+            setTimeout(() => {
+                mockLives = generateMockData();
+                renderLives(mockLives);
+            }, 1000);
+        }
+
+        function generateMockData() {
+            const streamers = ['hang_tiktok_88', 'gaming_pro_vn', 'showbiz_live', 'khoa_coin_streamer', 'thanh_san_ruong_99', 'giai_tri_247'];
+            return streamers.map((name, i) => {
+                const hasChest = Math.random() > 0.2;
+                const totalCoins = hasChest ? Math.floor(Math.random() * 8000) + 1000 : Math.floor(Math.random() * 1500);
+                const chestTime = hasChest ? Math.floor(Math.random() * 300) + 40 : 0; // Số giây mở rương
+                const views = Math.floor(Math.random() * 800) + 50;
+                
+                // Thuật toán tính độ dễ ăn xu (Ít view + Xu cao = Dễ ăn)
+                const score = Math.round((totalCoins / (views + 1)) * 10);
+
+                return { id: i, name, totalCoins, hasChest, chestTime, views, score };
+            }).sort((a, b) => b.score - a.score);
+        }
+
+        function renderLives(list) {
+            const container = document.getElementById('live-container');
+            container.innerHTML = '';
+
+            let chestsReady = 0;
+            let totalCoinsAcc = 0;
+
+            list.forEach(item => {
+                totalCoinsAcc += item.totalCoins;
+                if (item.hasChest && item.chestTime <= 120) chestsReady++;
+
+                const minutes = Math.floor(item.chestTime / 60);
+                const seconds = item.chestTime % 60;
+                const timeStr = `${minutes}m ${seconds < 10 ? '0' : ''}${seconds}s`;
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-cyan-500/50 transition relative overflow-hidden group";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center font-bold text-pink-400 border border-slate-700">
+                                @${item.name.substring(0,2).toUpperCase()}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-100 hover:text-cyan-400">@${item.name}</h4>
+                                <span class="text-xs text-slate-400"><i class="fa-solid fa-eye text-cyan-400"></i> ${item.views} Mắt xem</span>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold ${item.score > 50 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}">
+                            Độ dễ: ${item.score > 50 ? 'RẤT DỄ' : 'TRUNG BÌNH'}
+                        </span>
+                    </div>
+
+                    <div class="bg-slate-950/60 rounded-xl p-3 mb-4 border border-slate-800/80 flex justify-between items-center">
+                        <div>
+                            <p class="text-xs text-slate-400">Hũ / Rương Xu</p>
+                            <p class="text-lg font-bold text-amber-400 flex items-center gap-1">
+                                <i class="fa-solid fa-coins"></i> ${item.totalCoins.toLocaleString()} Xu
+                            </p>
+                        </div>
+                        ${item.hasChest ? `
+                            <div class="text-right">
+                                <p class="text-xs text-slate-400">Mở Rương Sau</p>
+                                <p class="text-sm font-mono font-bold text-emerald-400 flex items-center gap-1 justify-end">
+                                    <i class="fa-solid fa-box-open animate-bounce"></i> ${timeStr}
+                                </p>
+                            </div>
+                        ` : `<span class="text-xs text-slate-500">Không Rương</span>`}
+                    </div>
+
+                    <a href="https://www.tiktok.com/@${item.name}/live" target="_blank" 
+                        class="w-full bg-slate-800 hover:bg-gradient-to-r hover:from-pink-500 hover:to-cyan-500 hover:text-white text-slate-200 text-xs font-bold py-2.5 rounded-xl transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Vào Vẫn Live Săn Xu
+                    </a>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('stat-total-lives').innerText = list.length;
+            document.getElementById('stat-chests-ready').innerText = chestsReady;
+            document.getElementById('stat-total-coins').innerText = totalCoinsAcc.toLocaleString() + " Xu";
+        }
+
+        window.filterLives = function() {
+            const val = document.getElementById('filter-type').value;
+            let filtered = [...mockLives];
+
+            if (val === 'chest') filtered = filtered.filter(x => x.hasChest);
+            if (val === 'high-coin') filtered = filtered.filter(x => x.totalCoins >= 5000);
+
+            renderLives(filtered);
+        }
+    </script>
+</body>
+</html>
